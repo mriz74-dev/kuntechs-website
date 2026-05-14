@@ -1,19 +1,28 @@
 version: '3.8'
 
 services:
-  app:
+  kuntechs-spa:
     build: .
+    container_name: kuntechs-spa
     ports:
       - "3001:3001"
     environment:
       NODE_ENV: production
       PORT: 3001
     volumes:
-      - ./contacts.db:/app/contacts.db
+      - ./backend/contacts.db:/app/backend/contacts.db
+      - /app/node_modules
+      - /app/frontend/dist
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - kuntechs-network
+
+networks:
+  kuntechs-network:
+    driver: bridge

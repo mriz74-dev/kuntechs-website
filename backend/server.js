@@ -15,21 +15,30 @@ app.use(cors())
 app.use(bodyParser.json())
 
 // Initialize database
-const db = new Database(path.join(__dirname, 'contacts.db'))
+const dbPath = path.join(__dirname, 'contacts.db')
+const db = new Database(dbPath)
+
+console.log(`[DB] Database initialized at: ${dbPath}`)
 
 // Create table if it doesn't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS contacts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    firstName TEXT NOT NULL,
-    lastName TEXT NOT NULL,
-    email TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    company TEXT NOT NULL,
-    message TEXT NOT NULL,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      firstName TEXT NOT NULL,
+      lastName TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      company TEXT NOT NULL,
+      message TEXT NOT NULL,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+  console.log('[DB] Database schema verified')
+} catch (err) {
+  console.error('[DB] Error initializing database:', err)
+  process.exit(1)
+}
 
 // Routes
 
@@ -127,16 +136,49 @@ app.get('/api/contacts/export/excel', (req, res) => {
   }
 })
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '../frontend/dist')
-  app.use(express.static(frontendPath))
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'))
+// Serve frontend - both development and production
+const frontendPath = path.join(__dirname, '../frontend/dist')
+
+// Serve static assets with caching
+app.use(express.static(frontendPath, {
+  maxAge: '1y',
+  etag: false,
+  immutable: true,
+}))
+
+// SPA routing - all non-API routes go to index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'), {
+    maxAge: 0,
+    cacheControl: false,
   })
-}
+})
+
+// Catch-all for SPA routing (except /api routes)
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendPath, 'index.html'), {
+      maxAge: 0,
+      cacheControl: false,
+    })
+  } else {
+    res.status(404).json({ error: 'API endpoint not found' })
+  }
+})
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-  console.log(`API available at http://localhost:${PORT}/api`)
+  console.log('================================================================================')
+  console.log(`[SERVER] KunTechs SPA Backend Started`)
+  console.log('================================================================================')
+  console.log(`[INFO] Environment: ${process.env.NODE_ENV || 'development'}`)
+  console.log(`[INFO] Port: ${PORT}`)
+  console.log(`[INFO] API Health: http://localhost:${PORT}/api/health`)
+  console.log(`[INFO] Frontend: http://localhost:${PORT}/`)
+  console.log('================================================================================')
+  console.log('[INFO] Available Endpoints:')
+  console.log(`  POST   http://localhost:${PORT}/api/contact           - Submit contact form`)
+  console.log(`  GET    http://localhost:${PORT}/api/contacts          - Fetch all submissions`)
+  console.log(`  GET    http://localhost:${PORT}/api/contacts/export/excel - Export to Excel`)
+  console.log(`  GET    http://localhost:${PORT}/api/health            - Health check`)
+  console.log('================================================================================')
 })

@@ -39,17 +39,24 @@ In the DokPloy application settings:
 ### Build Configuration
 ```
 Build Command: docker build -t kuntechs-spa:latest .
+Dockerfile Path: ./Dockerfile
 ```
 
 ### Run Configuration
 ```
-Command: docker run -d \
+Docker Compose Mode (Recommended):
+Use the docker-compose.yml provided in the repository
+```
+
+Or manually with Docker:
+```
+docker run -d \
+  --name kuntechs-spa \
   -p 3001:3001 \
-  -v /var/lib/dokploy/kuntechs-spa/contacts.db:/app/contacts.db \
+  -v dokploy_contacts_db:/app/backend \
   -e NODE_ENV=production \
   -e PORT=3001 \
   --restart unless-stopped \
-  --healthcheck --interval=30s --timeout=10s --start-period=40s --retries=3 \
   kuntechs-spa:latest
 ```
 
@@ -65,8 +72,10 @@ PORT=3001
 1. In DokPloy, click **Ports** tab
 2. Add new port mapping:
    - **Container Port**: 3001
-   - **Host Port**: 3001 (or any free port)
-3. Enable **Public Access** if desired
+   - **Host Port**: 3001 (or any free port, e.g., 80 for HTTP)
+3. Enable **Public Access** checkbox
+4. (Optional) Add SSL certificate:
+   - DokPloy will auto-configure Let's Encrypt HTTPS
 
 ## Step 5: Optional - Setup Domain
 
@@ -112,14 +121,21 @@ curl -o contacts.xlsx https://kuntechs.yourdomain.com/api/contacts/export/excel
 
 The SQLite database is stored at:
 ```
-/var/lib/dokploy/kuntechs-spa/contacts.db
+/var/lib/dokploy/kuntechs-spa/backend/contacts.db
+```
+
+Or in Docker volumes:
+```
+docker exec kuntechs-spa sqlite3 /app/backend/contacts.db ".tables"
 ```
 
 DokPloy automatically handles volume mounting. To backup:
 
 ```bash
 ssh root@your-vps-ip
-cp /var/lib/dokploy/kuntechs-spa/contacts.db /backups/contacts_$(date +%Y%m%d_%H%M%S).db
+mkdir -p /backups
+docker exec kuntechs-spa cp /app/backend/contacts.db /tmp/contacts.db
+docker cp kuntechs-spa:/tmp/contacts.db /backups/contacts_$(date +%Y%m%d_%H%M%S).db
 ```
 
 ## Monitoring
