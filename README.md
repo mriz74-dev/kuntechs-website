@@ -35,6 +35,7 @@ A modern, type-safe Single Page Application built with React, TypeScript, and Ex
 
 ### Prerequisites
 - Node.js 18+ and npm
+- No old static files (all cleaned up)
 
 ### Setup
 
@@ -55,33 +56,66 @@ A modern, type-safe Single Page Application built with React, TypeScript, and Ex
    http://localhost:5173
    ```
 
+   The frontend will:
+   - Load the SPA from `frontend/src/main.tsx`
+   - Route between Home, Digital AI, and Contact Us pages
+   - Proxy API requests to the backend on port 3001
+
+### Verify SPA Routing Works
+
+1. Open http://localhost:5173
+2. Navigate using:
+   - Click navbar links (Home, Digital AI, Contact Us)
+   - Click buttons on home page (Get Started → Contact, Learn More → Digital AI)
+   - URL should change to: `/`, `/digital-ai`, `/contact`
+3. All navigation should be instant (no page reloads)
+
 ### Available Scripts
 
-- `npm run dev` - Start both frontend and backend in development mode
-- `npm run dev:frontend` - Start frontend dev server only
-- `npm run dev:backend` - Start backend server only
+- `npm run dev` - Start both frontend (5173) and backend (3001)
+- `npm run dev:frontend` - Start frontend Vite dev server only
+- `npm run dev:backend` - Start backend Express server only
 - `npm run build` - Build frontend for production
-- `npm start` - Start production server
+- `npm start` - Start production server (serves SPA + API)
 
 ## Project Structure
 
 ```
-.
-├── frontend/                 # React SPA
+kuntechs-spa/
+├── frontend/                        # React SPA (Vite)
 │   ├── src/
-│   │   ├── pages/           # Page components (Home, DigitalAI, Contact)
-│   │   ├── components/      # Reusable components (Layout, Navigation, Footer)
-│   │   ├── App.tsx          # Router setup
-│   │   └── main.tsx         # Entry point
-│   ├── vite.config.ts       # Vite configuration
-│   ├── tailwind.config.js   # Tailwind configuration
+│   │   ├── pages/
+│   │   │   ├── Home.tsx            # Home page with hero section
+│   │   │   ├── DigitalAI.tsx       # AI solutions showcase
+│   │   │   └── Contact.tsx         # Contact form
+│   │   ├── components/
+│   │   │   ├── Layout.tsx          # Main layout wrapper
+│   │   │   ├── Navigation.tsx      # Navigation with routing
+│   │   │   └── Footer.tsx          # Footer
+│   │   ├── App.tsx                 # TanStack Router setup
+│   │   ├── main.tsx                # React entry point
+│   │   └── index.css               # Tailwind CSS
+│   ├── dist/                       # Built SPA (production)
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
 │   └── package.json
-├── backend/                 # Express API
-│   ├── server.js            # Main server file
-│   └── contacts.db          # SQLite database (auto-created)
-├── Dockerfile               # Production Docker image
-├── docker-compose.yml       # Local Docker setup
-└── package.json             # Root package configuration
+├── backend/                         # Express API
+│   ├── server.js                   # API server with SPA serving
+│   ├── contacts.db                 # SQLite database (auto-created)
+│   └── .gitignore
+├── Dockerfile                      # Production multi-stage build
+├── docker-compose.yml              # Docker Compose for deployment
+├── nginx.conf                      # SPA routing config (reference)
+├── .env.example                    # Environment template
+├── .env.development                # Development env vars
+├── .gitignore
+├── package.json                    # Root package config
+├── README.md                       # Full documentation
+├── QUICK_START.md                  # Quick reference
+├── STARTUP.md                      # Startup & troubleshooting
+├── DEPLOYMENT.md                   # DokPloy deployment guide
+└── PROJECT_SUMMARY.md              # Architecture overview
 ```
 
 ## API Endpoints
