@@ -4,6 +4,7 @@ import bodyParser from 'body-parser'
 import Database from 'better-sqlite3'
 import ExcelJS from 'exceljs'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -139,15 +140,33 @@ app.get('/api/contacts/export/excel', (req, res) => {
 // Serve frontend - both development and production
 const frontendPath = path.join(__dirname, '../frontend/dist')
 
-// Serve static assets with caching
+console.log(`[SPA] Serving frontend from: ${frontendPath}`)
+
+// Verify frontend dist exists
+if (!fs.existsSync(frontendPath)) {
+  console.error(`[ERROR] Frontend dist directory not found at: ${frontendPath}`)
+  console.error('[ERROR] Run: cd frontend && npm run build')
+  process.exit(1)
+}
+
+if (!fs.existsSync(path.join(frontendPath, 'index.html'))) {
+  console.error(`[ERROR] index.html not found in: ${frontendPath}`)
+  process.exit(1)
+}
+
+console.log('[SPA] index.html found and ready')
+
+// Serve static assets with caching - disable directory listing
 app.use(express.static(frontendPath, {
   maxAge: '1y',
   etag: false,
   immutable: true,
+  dotfiles: 'deny',
 }))
 
 // SPA routing - all non-API routes go to index.html
 app.get('/', (req, res) => {
+  console.log('[SPA] Serving index.html for root path')
   res.sendFile(path.join(frontendPath, 'index.html'), {
     maxAge: 0,
     cacheControl: false,
@@ -156,13 +175,14 @@ app.get('/', (req, res) => {
 
 // Catch-all for SPA routing (except /api routes)
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+  if (req.path.startsWith('/api')) {
+    res.status(404).json({ error: 'API endpoint not found' })
+  } else {
+    console.log(`[SPA] Routing ${req.path} to index.html`)
     res.sendFile(path.join(frontendPath, 'index.html'), {
       maxAge: 0,
       cacheControl: false,
     })
-  } else {
-    res.status(404).json({ error: 'API endpoint not found' })
   }
 })
 
