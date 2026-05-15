@@ -138,7 +138,7 @@ app.get('/api/contacts/export/excel', (req, res) => {
 })
 
 // Serve frontend - both development and production
-const frontendPath = path.join(__dirname, '../frontend')
+const frontendPath = path.join(__dirname, '../frontend/')
 
 console.log(`[SPA] Serving frontend from: ${frontendPath}`)
 
